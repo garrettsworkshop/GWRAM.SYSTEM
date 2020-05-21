@@ -16,59 +16,32 @@ static char read_applekey(void) {
 	return (*((char*)0xC061) | *((char*)0xC062)) & 0x80;
 }
 
-static void set_mask_temp(char mask) {
-	__asm__("ldx %o", mask);
+static void ram2e_cmd(char operation, char data) {
+	// Load operation and data bytes into X and Y registers
+	// in preparation for command sequence
+	__asm__("ldx %o", operation);
+	__asm__("ldy %o", data);
 
+	// Command sequence
 	__asm__("lda #$FF");
 	__asm__("sta $C073");
-
 	__asm__("lda #$00");
 	__asm__("sta $C073");
-
 	__asm__("lda #$55");
 	__asm__("sta $C073");
-
 	__asm__("lda #$AA");
 	__asm__("sta $C073");
-
 	__asm__("lda #$C1");
 	__asm__("sta $C073");
-
 	__asm__("lda #$AD");
 	__asm__("sta $C073");
-
-	__asm__("lda #$E0");
-	__asm__("sta $C073");
-
+	// Operation
 	__asm__("stx $C073");
+	// Data
+	__asm__("sty $C073");
 }
-
-static void ufm_bitbang(char bitbang) {
-	__asm__("ldx %o", bitbang);
-
-	__asm__("lda #$FF");
-	__asm__("sta $C073");
-
-	__asm__("lda #$00");
-	__asm__("sta $C073");
-
-	__asm__("lda #$55");
-	__asm__("sta $C073");
-
-	__asm__("lda #$AA");
-	__asm__("sta $C073");
-
-	__asm__("lda #$C1");
-	__asm__("sta $C073");
-
-	__asm__("lda #$AD");
-	__asm__("sta $C073");
-
-	__asm__("lda #$EA");
-	__asm__("sta $C073");
-
-	__asm__("stx $C073");
-}
+static void set_mask_temp(char mask) { ram2e_cmd(0xE0, mask); }
+static void ufm_bitbang(char bitbang) { ram2e_cmd(0xEA, bitbang); }
 
 static void set_nvm(char mask) {
 	int i;
