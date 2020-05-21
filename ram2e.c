@@ -115,43 +115,31 @@ static void spin(uint8_t x, uint8_t y) {
 		int j;
 		for (j = 0; j < spin_small; j++) {
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			gotoxy(x, y);
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			cputs("-");
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 		}
 		for (j = 0; j < spin_small; j++) {
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			gotoxy(x, y);
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			cputs("\\");
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 		}
 		for (j = 0; j < spin_small; j++) {
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			gotoxy(x, y);
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			cputs("|");
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 		}
 		for (j = 0; j < spin_small; j++) {
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			gotoxy(x, y);
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 			cputs("/");
 			__asm__("lda $C000");
-			__asm__("lda $C100");
 		}
 	}
 }
