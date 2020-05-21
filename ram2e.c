@@ -8,13 +8,9 @@
 #define true 1
 #define false 0
 
-static char read_applekey(void) {
-	/*__asm__("lda $C061");
-	__asm__("ora $C062");
-	__asm__("and #$80");
-	__asm__("ldx #0");*/
-	return (*((char*)0xC061) | *((char*)0xC062)) & 0x80;
-}
+#define PB0 ((char*)0xC061)
+#define PB1 ((char*)0xC062)
+static char read_applekey(void) { return (*PB0 | *PB1) & 0x80; }
 
 static void ram2e_cmd(char operation, char data) {
 	// Load operation and data bytes into X and Y registers
