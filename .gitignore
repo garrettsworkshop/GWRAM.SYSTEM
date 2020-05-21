@@ -1,0 +1,5 @@
+*.DS_Store
+*.o
+*.sys
+ram2e.s
+ram2e140.po
