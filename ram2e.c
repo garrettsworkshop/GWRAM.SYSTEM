@@ -211,10 +211,12 @@ static void set_nvm(char mask) {
 
 static void menu(void)
 {
+	uint8_t bankcount = ramworks_getsize();
 	gotoxy(5, 1);
 	cputs("-- RAM2E Capacity Settings --");
-	gotoxy(4, 3);
-	printf("Current RAM2E capacity: %d kB", ramworks_getsize() * 64);
+	if (bankcount < 2) { gotoxy(5, 3); }
+	else { gotoxy(4, 3); }
+	printf("Current RAM2E capacity: %d kB", bankcount * 64);
 
 	gotoxy(1, 5);
 	cputs("Select desired memory capacity:");
@@ -334,7 +336,8 @@ int main(void)
 			case '4': mask = 0x3F; break;
 			case '5': mask = 0x7F; break;
 			case 'R': {
-				if (reset_count > 127) {
+				reset_count++;
+				if (reset_count >= 100) {
 					// Show message about saving.
 					clrscr(); // Clear screen
 					gotoxy(1, 8);
@@ -352,7 +355,7 @@ int main(void)
 					gotoxy(1, 8);
 					cputs("RAM2E settings reset successfully.");
 					goto end;
-				} else { reset_count++; }
+				}
 			} default: continue;
 		}
 
