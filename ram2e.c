@@ -335,8 +335,23 @@ int main(void)
 			case '5': mask = 0x7F; break;
 			case 'R': {
 				if (reset_count > 127) {
-					ufm_erase();
-					reset_count = 0;
+					// Show message about saving.
+					clrscr(); // Clear screen
+					gotoxy(1, 8);
+					cputs("Resetting RAM2E settings.");
+					gotoxy(1, 9);
+					cputs("Do not turn off your Apple.");
+
+					ufm_erase(); // Reset RAM2E settings
+
+					// Wait for >= 500ms on even the fastest systems.
+					spin(32, 8);
+					
+					// Show success message and quit
+					clrscr(); // Clear screen
+					gotoxy(1, 8);
+					cputs("RAM2E settings reset successfully.");
+					goto end;
 				} else { reset_count++; }
 			} default: continue;
 		}
@@ -359,28 +374,26 @@ int main(void)
 		cputs("Saving RAM2E capacity setting.");
 		gotoxy(1, 9);
 		cputs("Do not turn off your Apple.");
-
 		// Save capacity in nonvolatile memory.
 		set_nvm(mask);
-
 		// Wait for >= 500ms on even the fastest systems.
 		spin(32, 8);
-
-		// Clear screen again.
-		clrscr();
-
+		// Print success message
+		clrscr(); // Clear screen
 		gotoxy(1, 8);
 		cputs("RAM2E capacity saved successfully.");
 	} else { // Print success message if not saving in NVM.
 		gotoxy(1, 8);
 		cputs("RAM2E capacity set successfully.");
 	}
+
+	end:
+	// Show end message
 	gotoxy(1, 10);
 	cputs("Press any key to quit.");
 	gotoxy(1, 11);
 	cputs("You may also turn off your Apple.");
 	cgetc();
-
 	// Quit
 	clrscr();
 	return EXIT_SUCCESS;
