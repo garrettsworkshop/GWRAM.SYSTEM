@@ -149,7 +149,10 @@ static char ram2e_detect() {
 
 /* ramworks_getsize() returns the number of banks of RAM2E aux memory */
 uint8_t _rwsize;
-static uint8_t ramworks_getsize() {
+uint8_t _rwnot16mb;
+static uint16_t ramworks_getsize() {
+	_rwnot16mb = 1; // Set "not 16 mb" flag
+
 	// Store bank number at address 0 in each bnak
 	__asm__("sta $C009"); // ALTZP
 	__asm__("ldy #$FF"); // Start at bank 0xFF
@@ -168,6 +171,8 @@ static uint8_t ramworks_getsize() {
 	__asm__("cpy $00"); // Is bank num stored at address 0?
 	__asm__("bne %g", NotMem); // If not, skip increment
 	__asm__("inx"); // If so, increment bank count
+	__asm__("bne %g", NotMem); // Skip next if x!=0
+	__asm__("stx %v", _rwnot16mb); // Othwerwise rolled over so clear rwnot16mb
 	NotMem:
 	__asm__("iny"); // Move to next bank
 	__asm__("bne %g", CountLoop); // Repeat if not on bank 0
@@ -176,7 +181,8 @@ static uint8_t ramworks_getsize() {
 	__asm__("sta $C008"); // STDZP
 	__asm__("stx %v", _rwsize); // _rwsize = X (bank count)
 
-	return _rwsize;
+	if (_rwnot16mb) { return _rwsize; }
+	else { return 256; }
 }
 
 /* set_mask_temp(...) sends the "Set RAMWorks Capacity Mask" to the RAM2E */
@@ -211,7 +217,7 @@ static void set_nvm(char mask) {
 
 static void menu(void)
 {
-	uint8_t bankcount = ramworks_getsize();
+	uint16_t bankcount = ramworks_getsize();
 	gotoxy(5, 1);
 	cputs("-- RAM2E Capacity Settings --");
 	if (bankcount < 2) { gotoxy(5, 3); }
