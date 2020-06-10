@@ -351,7 +351,8 @@ int main(void)
 					gotoxy(1, 9);
 					cputs("Do not turn off your Apple.");
 
-					ufm_erase(); // Reset RAM2E settings
+					ufm_erase(); // Erase RAM2E settings memory
+					set_mask_temp(0x7F); // Set mask to default (0x7F)
 
 					// Wait for >= 500ms on even the fastest systems.
 					spin(32, 8);
