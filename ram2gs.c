@@ -98,9 +98,7 @@ int ram2gs_main(void)
 				clrscr();
 				return EXIT_SUCCESS;
 			}
-			case '!': nvm = true;
 			case '1': en8meg = 0; ram2gs_set4mb(); break;
-			case '@': nvm = true;
 			case '2': en8meg = 1; ram2gs_set8mb(); break;
 			case 'R': {
 				reset_count++;
