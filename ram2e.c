@@ -5,20 +5,10 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#define true 1
-#define false 0
+#include "util.h"
 
-
-#define VBL ((signed char*)0xC019)
-const uint8_t SPIN_HALFCYCLES = 3;
-const uint8_t SPIN_FRAMESPERCHAR = 4;
-
-#define PB0 ((char*)0xC061)
-#define PB1 ((char*)0xC062)
-static char read_applekey(void) { return (*PB0 | *PB1) & 0x80; }
-
-char _cmd;
-char _arg;
+static char _cmd;
+static char _arg;
 /* ram2e_cmd(...) issues a coded command+argument sequence to the RAM2E */
 static void ram2e_cmd(char cmd, char arg) {
 	// Load operation and data bytes into X and Y registers
@@ -100,7 +90,7 @@ static char auxram_detect() {
 }
 
 /* ram2e_detect() returns true if a RAM2E II has been detected */
-uint8_t _detect;
+static uint8_t _detect;
 static char ram2e_detect() {
 	#ifdef SKIP_RAM2E_DETECT
 	return true;
@@ -148,8 +138,8 @@ static char ram2e_detect() {
 }
 
 /* ramworks_getsize() returns the number of banks of RAM2E aux memory */
-uint8_t _rwsize;
-uint8_t _rwnot16mb;
+static uint8_t _rwsize;
+static uint8_t _rwnot16mb;
 static uint16_t ramworks_getsize() {
 	_rwnot16mb = 1; // Set "not 16 mb" flag
 
@@ -169,11 +159,11 @@ static uint16_t ramworks_getsize() {
 	CountLoop:
 	__asm__("sty $C073"); // Set bank
 	__asm__("cpy $00"); // Is bank num stored at address 0?
-	__asm__("bne %g", NotMem); // If not, skip increment
+	__asm__("bne %g", AfterInc); // If not, skip increment
 	__asm__("inx"); // If so, increment bank count
-	__asm__("bne %g", NotMem); // Skip next if x!=0
+	__asm__("bne %g", AfterInc); // Skip next if x!=0
 	__asm__("stx %v", _rwnot16mb); // Othwerwise rolled over so clear rwnot16mb
-	NotMem:
+	AfterInc:
 	__asm__("iny"); // Move to next bank
 	__asm__("bne %g", CountLoop); // Repeat if not on bank 0
 
@@ -250,66 +240,11 @@ static void menu(void)
 	cputs("Press [Q] to quit without saving.");
 }
 
-static void spin(uint8_t x, uint8_t y) { 
-	char i;
-
-	// Sync to frame before starting
-	while (*VBL >= 0);
-
-	// Wait and animate spinner.
-	// Spin_half
-	for (i = 0; i < SPIN_HALFCYCLES; i++) {
-		char j;
-		for (j = 0; j < 4; j++) {
-			char spinchar;
-			char k;
-
-			// Assign spinner char based on j
-			switch (j) {
-				case 0: spinchar = '\\'; break;
-				case 1: spinchar = '|'; break;
-				case 2: spinchar = '/'; break;
-				case 3: spinchar = '-'; break;
-				default: spinchar = '-'; break;
-			}
-
-			// Write it to screen
-			gotoxy(x, y);
-			putchar(spinchar);
-
-			// Wait specificed number of frames
-			for (k = 0; k < SPIN_FRAMESPERCHAR; k++) {
-				while (*VBL < 0);
-				while (*VBL >= 0);
-			}
-		}
-	}
-
-	// Wait a frame when finished
-	while (*VBL < 0);
-	while (*VBL >= 0);
-}
-
-int main(void)
+int ram2e_main(void)
 {
 	char mask;
 	char nvm;
 	int reset_count;
-
-	// First clear screen
-	clrscr();
-
-	// Make sure we are running on an Apple IIe
-	if((get_ostype() & 0xF0) != APPLE_IIE) {
-		// If not on Apple IIe, show an error message and quit
-		gotoxy(0, 8);
-		cputs(" THIS PROGRAM REQUIRES AN APPLE IIE.");
-		gotoxy(0, 10);
-		cputs(" PRESS ANY KEY TO QUIT.");
-		cgetc(); // Wait for key
-		clrscr(); // Clear screen before quitting
-		return EXIT_SUCCESS;
-	}
 
 	// Check for RAM2E
 	if(!auxram_detect() || !ram2e_detect()) {
@@ -331,7 +266,7 @@ int main(void)
 	reset_count = 0;
 	while (true) {
 		// Set capacity mask or quit according to keypress.
-		switch (toupper(cgetc())) {
+		switch (toupper(cgetc() & 0x7F)) {
 			case 'Q' : {
 				clrscr();
 				return EXIT_SUCCESS;
@@ -366,8 +301,7 @@ int main(void)
 			} default: continue;
 		}
 
-		// Check if pressed with apple key.
-		// If so, save to nonvolatile memory.
+		// Check if pressed with apple key. If so, save to nonvolatile memory.
 		if (read_applekey()) { nvm = true; }
 		break;
 	}
