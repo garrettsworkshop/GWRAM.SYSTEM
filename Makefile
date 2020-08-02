@@ -1,4 +1,4 @@
-all:    RAM2Eutil.po RAM2Eutil.dbg.po
+all:    GWRAMutil.po GWRAMutil.dbg.po
 
 obj:
 	@mkdir obj
@@ -39,13 +39,13 @@ bin/main.sys: bin obj/main.o obj/ram2e.o obj/ram2gs.o obj/ram2gs_asm.o obj/util.
 bin/main.dbg.sys: bin obj/main.o obj/ram2e.dbg.o obj/ram2gs.dbg.o obj/ram2gs_asm.o obj/util.o
 	ld65 -o bin/main.dbg.sys obj/main.o obj/ram2gs.dbg.o obj/ram2e.dbg.o obj/ram2gs_asm.o obj/util.o -C apple2enh-system.cfg --lib apple2enh.lib -D __EXEHDR__=0
 
-RAM2Eutil.po: bin/main.sys
-	cp prodos140.po bin/RAM2Eutil.po
-	cat bin/main.sys | java -jar ./AppleCommander-ac-1.6.0.jar -p bin/RAM2Eutil.po gwram.system sys 0x2000
+GWRAMutil.po: bin/main.sys
+	cp prodos140.po bin/GWRAMutil.po
+	cat bin/main.sys | java -jar ./AppleCommander-ac-1.6.0.jar -p bin/GWRAMutil.po gwram.system sys 0x2000
 
-RAM2Eutil.dbg.po: bin/main.dbg.sys
-	cp prodos140.po bin/RAM2Eutil.dbg.po
-	cat bin/main.dbg.sys | java -jar ./AppleCommander-ac-1.6.0.jar -p bin/RAM2Eutil.dbg.po gwram.system sys 0x2000
+GWRAMutil.dbg.po: bin/main.dbg.sys
+	cp prodos140.po bin/GWRAMutil.dbg.po
+	cat bin/main.dbg.sys | java -jar ./AppleCommander-ac-1.6.0.jar -p bin/GWRAMutil.dbg.po gwram.system sys 0x2000
 
 .PHONY: clean
 clean:
