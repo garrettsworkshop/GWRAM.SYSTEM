@@ -55,16 +55,6 @@ static char auxram_detect() {
 	__asm__("sta $C009"); // Store in ALTZP
 	__asm__("sta $C073"); // Set RW bank 0
 
-	// Save RW bank 0 $00-03
-	__asm__("lda $00");
-	__asm__("pha");
-	__asm__("lda $01");
-	__asm__("pha");
-	__asm__("lda $02");
-	__asm__("pha");
-	__asm__("lda $03");
-	__asm__("pha");
-
 	// Store 00 FF 55 AA in RW bank 0 ZP
 	__asm__("lda #$00");
 	__asm__("sta $00");
@@ -91,29 +81,11 @@ static char auxram_detect() {
 
 	// Found aux ram card
 	__asm__("sta $C008"); // Don't store in ALTZP
-	// Restore RW bank 0 $00-03
-	__asm__("pla");
-	__asm__("sta $03");
-	__asm__("pla");
-	__asm__("sta $02");
-	__asm__("pla");
-	__asm__("sta $01");
-	__asm__("pla");
-	__asm__("sta $00");
 	return true;
 
 	// Not found
 	noramworks:
 	__asm__("sta $C008"); // Don't store in ALTZP
-	// Restore RW bank 0 $00-03
-	__asm__("pla");
-	__asm__("sta $03");
-	__asm__("pla");
-	__asm__("sta $02");
-	__asm__("pla");
-	__asm__("sta $01");
-	__asm__("pla");
-	__asm__("sta $00");
 	return false;
 }
 
