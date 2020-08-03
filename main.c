@@ -14,10 +14,13 @@ int main(void)
 	switch ((get_ostype() & 0xF0)) {
 		case APPLE_IIE:
 			ram2e_main();
-			break;
+			// Set RAMWorks bank to 0
+			__asm__("lda #0");
+			__asm__("sta $C073");
+			return EXIT_SUCCESS;
 		case APPLE_IIGS:
-			ram2gs_main();
-			break;
+			ram2gs_main();	
+			return EXIT_SUCCESS;
 		default:
 			// If not on IIe or IIgs, show an error message and quit
 			gotoxy(0, 8);
@@ -27,6 +30,5 @@ int main(void)
 			cgetc(); // Wait for key
 			clrscr(); // Clear screen before quitting
 			return EXIT_SUCCESS;
-			break;
 	} 
 }

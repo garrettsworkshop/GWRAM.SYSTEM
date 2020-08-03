@@ -183,6 +183,7 @@ static char ram2e_detect() {
 	// Go back to bank 0
 	__asm__("lda #$00");
 	__asm__("sta $C073");
+	__asm__("sta $C073");
 
 	// Save result and return
 	__asm__("lda $00"); // Get beginning of bank 0
@@ -259,9 +260,8 @@ static void set_nvm(char mask) {
 	ufm_program();
 }
 
-static void menu(void)
+static void menu(uint16_t bankcount)
 {
-	uint16_t bankcount = ramworks_getsize();
 	gotoxy(5, 1);
 	cputs("-- RAM2E Capacity Settings --");
 	if (bankcount < 2) { gotoxy(5, 3); }
@@ -299,10 +299,12 @@ int ram2e_main(void)
 	char mask;
 	char nvm;
 	int reset_count;
+	uint16_t bankcount;
 
 	// Check for RAM2E
 	ramworks_save(); // Save what will be clobbered
 	if(!auxram_detect() || !ram2e_detect()) {
+		ramworks_restore();
 		// If no RAM2E, show an error message and quit
 		gotoxy(0, 8);
 		cputs(" No RAM2E II detected.");
@@ -310,11 +312,13 @@ int ram2e_main(void)
 		cputs(" Press any key to quit.");
 		cgetc(); // Wait for key
 		clrscr(); // Clear screen before quitting
-		ramworks_restore();
 		return EXIT_SUCCESS;
 	}
 
-	menu(); // Print menu
+	// Get size and print menu 
+	bankcount = ramworks_getsize();
+	menu(bankcount); // Print menu
+	ramworks_restore(); // Restore RAMWorks contents
 
 	// Get user choice from menu
 	mask = 0;
