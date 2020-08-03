@@ -332,13 +332,19 @@ int ram2e_main(void)
 	}
 
 	end:
-	// Show end message
-	gotoxy(1, 10);
-	cputs("Press any key to quit.");
-	gotoxy(1, 11);
-	cputs("You may also turn off your Apple.");
-	cgetc();
-	// Quit
-	clrscr();
-	return EXIT_SUCCESS;
+	if (nvm) { // Show end message for nonvolatile save
+		gotoxy(1, 10);
+		cputs("You may now turn off your Apple.");
+		gotoxy(1, 12);
+		cputs("You may also reset your Apple for");
+		gotoxy(1, 13);
+		cputs("the setting change to take effect.");
+	} else { // Show end message for volatile save
+		gotoxy(1, 10);
+		cputs("Please reset your Apple for");
+		gotoxy(1, 11);
+		cputs("the setting change to take effect.");
+	}
+	// Don't quit. Instead leave prompt asking user to reset.
+	while(1) { cgetc(); }
 }
