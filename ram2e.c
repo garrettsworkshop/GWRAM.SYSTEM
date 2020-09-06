@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "util.h"
+#include "gwconio.h"
 
 static char _rwsave[256];
 static char _rwsave0_1;
@@ -262,36 +263,28 @@ static void set_nvm(char mask) {
 
 static void menu(uint16_t bankcount)
 {
-	gotoxy(5, 1);
-	cputs("-- RAM2E Capacity Settings --");
+	gwcputsxy(5, 1, "-- RAM2E Capacity Settings --");
+	
 	if (bankcount < 2) { gotoxy(5, 3); }
 	else { gotoxy(4, 3); }
-	printf("Current RAM2E capacity: %d kB", bankcount * 64);
+	gwcputs("Current RAM2E capacity: ");
+	printf("%d", bankcount * 64);
+	gwcputs(" kB");
 
-	gotoxy(1, 5);
-	cputs("Select desired memory capacity:");
+	gwcputsxy(1, 5, "Select desired memory capacity:");
 
-	gotoxy(4, 7);
-	cputs("1. 64 kilobytes");
-	gotoxy(4, 9);
-	cputs("2. 512 kilobytes");
-	gotoxy(4, 11);
-	cputs("3. 1 megabyte");
-	gotoxy(4, 13);
-	cputs("4. 4 megabytes");
-	gotoxy(4, 15);
-	cputs("5. 8 megabytes");
+	gwcputsxy(4, 7, "1. 64 kilobytes");
+	gwcputsxy(4, 9, "2. 512 kilobytes");
+	gwcputsxy(4, 11, "3. 1 megabyte");
+	gwcputsxy(4, 13, "4. 4 megabytes");
+	gwcputsxy(4, 15, "5. 8 megabytes");
 
-	gotoxy(1, 18);
-	cputs("Capacity will be saved until power-off.");
+	gwcputsxy(1, 18, "Capacity will be saved until power-off.");
 
-	gotoxy(1, 20);
-	cputs("To remember capacity setting in");
-	gotoxy(1, 21);
-	cputs("nonvolatile memory, press Apple+number.");
+	gwcputsxy(1, 20, "To remember capacity setting in");
+	gwcputsxy(1, 21, "nonvolatile memory, press Apple+number.");
 
-	gotoxy(1, 23);
-	cputs("Press [Q] to quit without saving.");
+	gwcputsxy(1, 23, "Press [Q] to quit without saving.");
 }
 
 int ram2e_main(void)
@@ -306,10 +299,8 @@ int ram2e_main(void)
 	if(!auxram_detect() || !ram2e_detect()) {
 		ramworks_restore();
 		// If no RAM2E, show an error message and quit
-		gotoxy(0, 8);
-		cputs(" No RAM2E II detected.");
-		gotoxy(0, 10);
-		cputs(" Press any key to quit.");
+		gwcputsxy(0, 8, " No RAM2E II detected.");
+		gwcputsxy(0, 10, " Press any key to quit.");
 		cgetc(); // Wait for key
 		clrscr(); // Clear screen before quitting
 		return EXIT_SUCCESS;
@@ -341,10 +332,8 @@ int ram2e_main(void)
 				if (reset_count >= 100) {
 					// Show message about saving.
 					clrscr(); // Clear screen
-					gotoxy(1, 8);
-					cputs("Resetting RAM2E settings.");
-					gotoxy(1, 9);
-					cputs("Do not turn off your Apple.");
+					gwcputsxy(1, 8, "Resetting RAM2E settings.");
+					gwcputsxy(1, 9, "Do not turn off your Apple.");
 
 					ufm_erase(); // Erase RAM2E settings memory
 					set_mask_temp(0x7F); // Set mask to default (0x7F)
@@ -354,8 +343,7 @@ int ram2e_main(void)
 					
 					// Show success message and quit
 					clrscr(); // Clear screen
-					gotoxy(1, 8);
-					cputs("RAM2E settings reset successfully.");
+					gwcputsxy(1, 8, "RAM2E settings reset successfully.");
 					goto end;
 				}
 			} default: continue;
@@ -374,36 +362,27 @@ int ram2e_main(void)
 
 	if (nvm) { // Save in NVM if requested.
 		// Show message about saving.
-		gotoxy(1, 8);
-		cputs("Saving RAM2E capacity setting.");
-		gotoxy(1, 9);
-		cputs("Do not turn off your Apple.");
+		gwcputsxy(1, 8, "Saving RAM2E capacity setting.");
+		gwcputsxy(1, 9, "Do not turn off your Apple.");
 		// Save capacity in nonvolatile memory.
 		set_nvm(mask);
 		// Wait for >= 500ms on even the fastest systems.
 		spin(32, 8);
 		// Print success message
 		clrscr(); // Clear screen
-		gotoxy(1, 8);
-		cputs("RAM2E capacity saved successfully.");
+		gwcputsxy(1, 8, "RAM2E capacity saved successfully.");
 	} else { // Print success message if not saving in NVM.
-		gotoxy(1, 8);
-		cputs("RAM2E capacity set successfully.");
+		gwcputsxy(1, 8, "RAM2E capacity set successfully.");
 	}
 
 	end:
 	if (nvm) { // Show end message for nonvolatile save
-		gotoxy(1, 10);
-		cputs("You may now turn off your Apple.");
-		gotoxy(1, 12);
-		cputs("You may also reset your Apple for");
-		gotoxy(1, 13);
-		cputs("the setting change to take effect.");
+		gwcputsxy(1, 10, "You may now turn off your Apple.");
+		gwcputsxy(1, 12, "You may also reset your Apple for");
+		gwcputsxy(1, 13, "the setting change to take effect.");
 	} else { // Show end message for volatile save
-		gotoxy(1, 10);
-		cputs("Please reset your Apple for");
-		gotoxy(1, 11);
-		cputs("the setting change to take effect.");
+		gwcputsxy(1, 10, "Please reset your Apple for");
+		gwcputsxy(1, 11, "the setting change to take effect.");
 	}
 	// Don't quit. Instead leave prompt asking user to reset.
 	while(1) { cgetc(); }

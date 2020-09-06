@@ -17,18 +17,14 @@ int main(void)
 			// Set RAMWorks bank to 0
 			__asm__("lda #0");
 			__asm__("sta $C073");
-			return EXIT_SUCCESS;
 		case APPLE_IIGS:
 			ram2gs_main();	
-			return EXIT_SUCCESS;
 		default:
 			// If not on IIe or IIgs, show an error message and quit
-			gotoxy(0, 8);
-			cputs(" THIS PROGRAM REQUIRES APPLE IIE OR IIGS");
-			gotoxy(0, 10);
-			cputs(" PRESS ANY KEY TO QUIT.");
+			cputsxy(0, 8, " THIS PROGRAM REQUIRES APPLE IIE OR IIGS");
+			cputsxy(0, 10, " PRESS ANY KEY TO QUIT.");
 			cgetc(); // Wait for key
 			clrscr(); // Clear screen before quitting
-			return EXIT_SUCCESS;
-	} 
+	}
+	return EXIT_SUCCESS;
 }
