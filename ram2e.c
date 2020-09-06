@@ -346,6 +346,7 @@ int ram2e_main(void)
 					gwcputsxy(1, 8, "RAM2E settings reset successfully.");
 					goto end;
 				}
+				continue;
 			} default: reset_count = 0; continue;
 		}
 

@@ -113,6 +113,7 @@ int ram2gs_main(void)
 					gwcputsxy(1, 8, "RAM2GS settings reset successfully.");
 					goto end;
 				}
+				continue;
 			} default: reset_count = 0; continue;
 		}
 
