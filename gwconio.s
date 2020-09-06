@@ -1,6 +1,6 @@
 ;
 ; Ullrich von Bassewitz, 06.08.1998
-; Modified Sep. 5, 2020 by Zane Kaminski, Engineer @ Garrett's Workshop
+; Modified Sep. 6, 2020 by Zane Kaminski, Engineer @ Garrett's Workshop
 ;
 ;
         .ifdef  __APPLE2ENH__
@@ -8,6 +8,7 @@
         .endif
         .export         _gwcputcxy, _gwcputc
         .export         _gwcputsxy, _gwcputs
+        .import         _gwconiomask
         .import         gotoxy, VTABZ
         .importzp       ptr1, tmp1
 
@@ -60,6 +61,12 @@ _gwcputc:
         cmp     #$0A            ; Test for \n = line feed
         beq     newline
         eor     #$80            ; Invert high bit
+ ;       .ifndef __APPLE2ENH__
+        cmp     #$E0            ; Test for lowercase
+        bcc     cputdirect
+;        and     #$DF            ; Convert to uppercase
+        and     _gwconiomask     ; Convert to uppercase using mask
+;        .endif
 
 cputdirect:
         jsr     putchar
