@@ -96,8 +96,8 @@ int ram2gs_main(void)
 			case '2': en8meg = 1; ram2gs_set8mb(); break;
 			case 'R': {
 				reset_count++;
-				if (reset_count >= 100) {
-					// Show message about saving.
+				if (reset_count >= 25) {
+					// Show message about resetting.
 					clrscr(); // Clear screen
 					gwcputsxy(1, 8, "Resetting RAM2GS settings.");
 					gwcputsxy(1, 9, "Do not turn off your Apple.");
@@ -113,7 +113,7 @@ int ram2gs_main(void)
 					gwcputsxy(1, 8, "RAM2GS settings reset successfully.");
 					goto end;
 				}
-			} default: continue;
+			} default: reset_count = 0; continue;
 		}
 
 		// Check if pressed with apple key. If so, save to nonvolatile memory.
