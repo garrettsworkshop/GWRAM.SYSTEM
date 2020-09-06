@@ -4,9 +4,14 @@
 
 #include "ram2e.h"
 #include "ram2gs.h"
+#include "gwconio.h"
+
+char gwconiomask;
 
 int main(void)
 {
+	gwconiomask = 0xFF;
+
 	// First clear screen
 	clrscr();
 
@@ -19,16 +24,15 @@ int main(void)
 			__asm__("sta $C073");
 			return EXIT_SUCCESS;
 		case APPLE_IIGS:
-			ram2gs_main();	
+			ram2gs_main();
 			return EXIT_SUCCESS;
 		default:
+			gwconiomask = 0xDF;
 			// If not on IIe or IIgs, show an error message and quit
-			gotoxy(0, 8);
-			cputs(" THIS PROGRAM REQUIRES APPLE IIE OR IIGS");
-			gotoxy(0, 10);
-			cputs(" PRESS ANY KEY TO QUIT.");
+			gwcputsxy(0, 8, " THIS PROGRAM REQUIRES APPLE IIE OR IIGS");
+			gwcputsxy(0, 10, " PRESS ANY KEY TO QUIT.");
 			cgetc(); // Wait for key
 			clrscr(); // Clear screen before quitting
 			return EXIT_SUCCESS;
-	} 
+	}
 }
