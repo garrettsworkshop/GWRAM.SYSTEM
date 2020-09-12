@@ -46,11 +46,11 @@ bin/main.dbg.sys: bin obj/main.o obj/ram2e.dbg.o obj/ram2gs.dbg.o obj/ram2gs_asm
 
 GWRAM.po: bin/main.sys
 	cp prodos140.po bin/GWRAM.po
-	cat bin/main.sys | java -jar ./AppleCommander-ac-1.6.0.jar -p bin/GWRAM.po gwram.system sys 0x2000
+	cat bin/main.sys | java -jar ./ac-1.6.0.jar -p bin/GWRAM.po gwram.system sys 0x2000
 
 GWRAM.dbg.po: bin/main.dbg.sys
 	cp prodos140.po bin/GWRAM.dbg.po
-	cat bin/main.dbg.sys | java -jar ./AppleCommander-ac-1.6.0.jar -p bin/GWRAM.dbg.po gwram.system sys 0x2000
+	cat bin/main.dbg.sys | java -jar ./ac-1.6.0.jar -p bin/GWRAM.dbg.po gwram.system sys 0x2000
 
 .PHONY: clean
 clean:
