@@ -35,13 +35,17 @@ obj/util.o: obj util.c
 	cc65 util.c $(cflags) -o obj/util.s
 	ca65 obj/util.s -o obj/util.o
 
+obj/ramtest.o: obj ramtest.c
+	cc65 ramtest.c $(cflags) -o obj/ramtest.s
+	ca65 obj/ramtest.s -o obj/ramtest.o
+
 obj/gwconio.o: obj gwconio.s
 	ca65 gwconio.s -o obj/gwconio.o
 
-bin/main.sys: bin obj/main.o obj/ram2e.o obj/ram2gs.o obj/ram2gs_asm.o obj/util.o obj/gwconio.o
+bin/main.sys: bin obj/main.o obj/ram2e.o obj/ram2gs.o obj/ram2gs_asm.o obj/util.o obj/ramtest.o obj/gwconio.o
 	ld65 -o bin/main.sys obj/main.o obj/ram2gs.o obj/ram2e.o obj/ram2gs_asm.o obj/util.o obj/gwconio.o -C apple2-system.cfg --lib apple2.lib -D __EXEHDR__=0
 
-bin/main.dbg.sys: bin obj/main.o obj/ram2e.dbg.o obj/ram2gs.dbg.o obj/ram2gs_asm.o obj/util.o obj/gwconio.o
+bin/main.dbg.sys: bin obj/main.o obj/ram2e.dbg.o obj/ram2gs.dbg.o obj/ram2gs_asm.o obj/util.o obj/ramtest.o obj/gwconio.o
 	ld65 -o bin/main.dbg.sys obj/main.o obj/ram2gs.dbg.o obj/ram2e.dbg.o obj/ram2gs_asm.o obj/util.o obj/gwconio.o -C apple2-system.cfg --lib apple2.lib -D __EXEHDR__=0
 
 GWRAM.po: bin/main.sys

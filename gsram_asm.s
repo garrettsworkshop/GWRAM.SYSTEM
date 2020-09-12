@@ -36,7 +36,7 @@
       .I16
 .endmacro
 
-.segment	"CODE"
+.code
 
 .proc _gsram_getsize: near
 .A8
