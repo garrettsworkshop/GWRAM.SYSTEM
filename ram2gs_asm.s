@@ -40,6 +40,54 @@
 
 .segment	"CODE"
 
+.proc _unswap: near
+.A8
+.I8
+	; Save current bank and accumulator
+	phb
+	pha
+	; Switch to bank 0xFB
+	lda #$FB
+	pha
+	plb
+	; Submit C1AD
+	lda #$C1
+	sta $FFFE
+	lda #$AD
+	sta $FFFF
+	; Pull and submit command 
+	lda #$00
+	sta $FFFD
+	; Restore accumulator and bank and return
+	pla
+	plb
+	rts
+.endproc
+
+.proc _swap: near
+.A8
+.I8
+	; Save current bank and accumulator
+	phb
+	pha
+	; Switch to bank 0xFB
+	lda #$FB
+	pha
+	plb
+	; Submit C1AD
+	lda #$C1
+	sta $FFFE
+	lda #$AD
+	sta $FFFF
+	; Pull and submit command 
+	lda #$01
+	sta $FFFD
+	; Restore accumulator and bank and return
+	pla
+	plb
+	rts
+.endproc
+
 .proc _ram2gs_getsize: near
 .A8
 .I8
@@ -97,55 +145,6 @@
 	xce				; Restore emulation bit
 	txa				; Transfer bank count to A
 	plp				; Pull status again to pull I flag
-	rts
-.endproc
-
-
-.proc _unswap: near
-.A8
-.I8
-	; Save current bank and accumulator
-	phb
-	pha
-	; Switch to bank 0xFB
-	lda #$FB
-	pha
-	plb
-	; Submit C1AD
-	lda #$C1
-	sta $FFFE
-	lda #$AD
-	sta $FFFF
-	; Pull and submit command 
-	lda #$00
-	sta $FFFD
-	; Restore accumulator and bank and return
-	pla
-	plb
-	rts
-.endproc
-
-.proc _swap: near
-.A8
-.I8
-	; Save current bank and accumulator
-	phb
-	pha
-	; Switch to bank 0xFB
-	lda #$FB
-	pha
-	plb
-	; Submit C1AD
-	lda #$C1
-	sta $FFFE
-	lda #$AD
-	sta $FFFF
-	; Pull and submit command 
-	lda #$01
-	sta $FFFD
-	; Restore accumulator and bank and return
-	pla
-	plb
 	rts
 .endproc
 
