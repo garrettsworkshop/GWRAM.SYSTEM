@@ -6,6 +6,10 @@
 .export 	_ram2gs_detect
 .export 	_ram2gs_cmd
 
+.define	GetTWConfig			$BCFF3C
+.define SetTWConfig			$BCFF40
+.define DisableDataCache	$BCFF4C
+
 .macro A8
        sep #$20 ; put the 65C816 in 8-bit accumulator mode
       .A8
@@ -40,66 +44,86 @@
 
 .segment	"CODE"
 
-.proc _ram2gs_getsize: near
+
+.proc _thrash: near
 .A8
 .I8
 	; Preamble
 	php				; Push status
-	sei				; Disable interrupts
-	clc				; Clear carry
-	xce				; Clear emulation bit
-	php				; Push status again, reflecting emulation bit
+	AI16
 	phb				; Push bank
+	pha				; Push accumulator
+	pha				; Push X
+	phy				; Push Y
+
+	; Read 0x100000-0x11FFFF
 	AI8
-
-	; Go to bank 3F
-	ldy #$3F
-	phy
+	lda	#$20		; A = 0x10 (bank)
+	_thrash_loop:
+	pha				; Switch to bank stored in A
 	plb
-	; Save 3F/3456
-	ldx $3456
+	AI16
+	lda #$0000		; Get index in A
+	clc				; Clear carry in preparation to add in loop
 
-	; Go to bank 7F
-	ldy #$7F
-	phy
-	plb
-	; Invert 7F/3456
-	lda $3456
-	eor #$FF
-	sta $3456
+	; Read loop
+	_thrash_loop0:
+	tax				; Get index from A into X to do LDYs
+	ldy $0100,X		; Read 64 bytes
+	ldy $0102,X		; ...
+	ldy $0104,X
+	ldy $0106,X
+	ldy $0108,X
+	ldy $010A,X
+	ldy $010C,X
+	ldy $010E,X
+	ldy $0110,X
+	ldy $0112,X
+	ldy $0114,X
+	ldy $0116,X
+	ldy $0118,X
+	ldy $011A,X
+	ldy $011C,X
+	ldy $011E,X
+	ldy $0120,X
+	ldy $0122,X
+	ldy $0124,X
+	ldy $0126,X
+	ldy $0128,X
+	ldy $012A,X
+	ldy $012C,X
+	ldy $012E,X
+	ldy $0130,X
+	ldy $0132,X
+	ldy $0134,X
+	ldy $0136,X
+	ldy $0138,X
+	ldy $013A,X
+	ldy $013C,X
+	ldy $013E,X
+	adc	#$0040		; Add 64 to index in A
+	cmp #0
+	bne _thrash_loop0 ; Repeat if we haven't passed 0xFFFF
 
-	; Go to bank 3F
-	ldy #$3F
-	phy
-	plb
-	; Has 3F/3456 changed?
-	cpx $3456
-	php
+	; Bank increment
+	AI8
+	phb				; Transfer bank to A
+	pla
+	inc				; Increment bank
+	cmp #$21 		; Stop after bank 0x20
+	bne _thrash_loop
 
-	; Go to bank 7F
-	ldy #$7F
-	phy
-	plb
-	; Restore 7F/3456
-	eor #$FF
-	sta $3456
-
-	; Check result
-	ldx #$80
-	plp
-	beq _ram2gs_getsize_return
-	ldx #$40
 
 	; Postamble
-	_ram2gs_getsize_return:
+	AI16
+	ply				; Restore Y
+	plx				; Restore X
+	pla				; Restore accumulator
 	plb				; Restore bank
+	AI8
 	plp				; Restore status
-	xce				; Restore emulation bit
-	txa				; Transfer bank count to A
-	plp				; Pull status again to pull I flag
 	rts
 .endproc
-
 
 .proc _unswap: near
 .A8
@@ -149,6 +173,122 @@
 	rts
 .endproc
 
+.proc _ram2gs_getsize: near
+.A8
+.I8
+	; Preamble
+	php				; Push status
+	sei				; Disable interrupts
+	clc				; Clear carry
+	xce				; Clear emulation bit
+	php				; Push status again, reflecting emulation bit
+	phb				; Push bank
+
+	; Check for TranswarpGS
+	AI8
+	lda #0
+	pha				; Push "TWGS absent" flag
+;	AI16
+;	lda $BCFF00
+;	cmp #$5754		; "WT"
+;	bne _ram2gs_getsize_notwgs1
+;	lda $BCFF02
+;	cmp #$5347		; "SG"
+;	bne _ram2gs_getsize_notwgs1
+;
+;	; Get and push TWGS config
+;	jsl GetTWConfig
+;	pha
+;	; Disable TWGS data cache
+;	jsl DisableDataCache ; Disable data cache
+;
+;	; Pull to restore TWGS settings into A
+;	pla
+;	; Pull "TWGS absent" flag into x, and discard it
+;	AI8
+;	plx
+;	AI16
+;	; Push TWGS settings
+;	pha
+;	; Push "TWGS exists" flag
+;	AI8
+;	ldx #1
+;	phx
+
+	_ram2gs_getsize_notwgs1:
+	AI8
+	; Go to bank 3F
+	ldy #$3F
+	phy
+	plb
+	; Save 3F/3456
+	lda $3456
+	pha
+
+	; Go to bank 7F
+	ldy #$7F
+	phy
+	plb
+	; Save and then invert 7F/3456
+	lda $3456
+	pha
+	eor #$FF
+	sta $3456
+
+	; Go to bank 3F
+	ldy #$3F
+	phy
+	plb
+	; Has 3F/3456 changed?
+	jsr _thrash
+	plx ; X = saved 7F/3456
+	pla ; A = saved 3F/3456
+	cmp $3456
+	php ; Push to save processor status
+
+	; Go to bank 7F
+	ldy #$7F
+	phy
+	plb
+	; Restore 3F/3456
+	sta $3456
+
+	; Go to bank 7F
+	ldy #$7F
+	phy
+	plb
+	; Restore 7F/3456
+	stx $3456
+
+	; Check result
+	ldx #$80
+	plp
+	beq _ram2gs_getsize_return
+	ldx #$40
+	; Restore TWGS config
+	_ram2gs_getsize_return:
+	pla				; Pull TWGS flag
+	phx				; Push to save return value
+;	beq _ram2gs_getsize_post ; Skip if no TWGS
+;	plx				; Get return value back
+;	AI16
+;	pla				; Pull TWGS config
+;	AI8
+;	phx
+;	AI16
+;	jsl SetTWConfig
+;	AI8
+
+	; Postamble
+	_ram2gs_getsize_post:
+	pla				; Pull return value
+	plb				; Restore bank
+	plp				; Restore status
+	xce				; Restore emulation bit
+	plp				; Pull status again to pull I flag
+	rts
+.endproc
+
 .proc _ram2gs_detect: near
 .A8
 .I8
@@ -159,8 +299,40 @@
 	xce				; Clear emulation bit
 	php				; Push status again, reflecting emulation bit
 	phb				; Push bank
-	AI8
 
+	; Check for TranswarpGS
+	AI8
+	lda #0
+	pha				; Push "TWGS absent" flag
+;	AI16
+;	lda $BCFF00
+;	cmp #$5754		; "WT"
+;	bne _ram2gs_detect_notwgs1
+;	lda $BCFF02
+;	cmp #$5347		; "SG"
+;	bne _ram2gs_detect_notwgs1
+;
+;	; Get and push TWGS config
+;	jsl GetTWConfig
+;	pha
+;	; Disable TWGS data cache
+;	jsl DisableDataCache ; Disable data cache
+;
+;	; Pull to restore TWGS settings into A
+;	pla
+;	; Pull "TWGS absent" flag into x, and discard it
+;	AI8
+;	plx
+;	AI16
+;	; Push TWGS settings
+;	pha
+;	; Push "TWGS exists" flag
+;	AI8
+;	ldx #1
+;	phx
+
+	_ram2gs_detect_notwgs1:
+	AI8
 	; Switch to bank 0x3F
 	lda #$3F
 	pha
@@ -169,11 +341,13 @@
 	; Unswap
 	jsr _unswap
 	; Save unswapped 3F/8000
+	jsr _thrash
 	lda $8000
 	pha
 	; Swap
 	jsr _swap
 	; Save swapped 3F/8000
+	jsr _thrash
 	lda $8000
 	pha
 
@@ -181,6 +355,7 @@
 	lda #$FF
 	sta $8000
 	; Verify 0xFF stored
+	jsr _thrash
 	lda $8000
 	cmp #$FF
 	bne _ram2gs_detect_fail
@@ -191,6 +366,7 @@
 	lda #$00
 	sta $8000
 	; Verify 0x00 stored
+	jsr _thrash
 	lda $8000
 	cmp #$00
 	bne _ram2gs_detect_fail
@@ -198,27 +374,45 @@
 	; Swap
 	jsr _swap
 	; Verify 0xFF stored
+	jsr _thrash
 	lda $8000
 	cmp #$FF
 	bne _ram2gs_detect_fail
 
 	; Get success return value and jump to postamble
 	ldx #$01		; Get success falue
-	bne _ram2gs_detect_return ; Jump to postamble
+	bne _ram2gs_detect_done ; Jump to postamble
 
 	; Fail
 	_ram2gs_detect_fail:
 	ldx #$00		; Get fail value
 
-	; Postamble
-	_ram2gs_detect_return:
+	; Done, now put back clobbered bytes
+	_ram2gs_detect_done:
 	jsr _swap		; Swap
 	pla				; Get value to restore to swapped bank 3F
 	sta $8000		; Restore
 	jsr _unswap		; Unswap
 	pla				; Get value to restore to unswapped bank 3F
 	sta $8000		; Restore
-	txa				; Put return value in accumulator
+
+	; Restore TWGS config
+	_ram2gs_detect_return:
+	pla				; Pull TWGS flag
+	phx				; Push to save return value
+;	beq _ram2gs_detect_post ; Skip if no TWGS
+;	plx				; Get return value back
+;	AI16
+;	pla				; Pull TWGS config
+;	AI8
+;	phx
+;	AI16
+;	jsl SetTWConfig
+;	AI8
+
+	; Postamble
+	_ram2gs_detect_post:
+	pla				; Pull return value
 	plb				; Restore bank
 	plp				; Restore status
 	xce				; Restore emulation bit
