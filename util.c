@@ -13,9 +13,10 @@ char read_applekey(void) { return ((*PB0) | (*PB1)) & 0x80; }
 #define SPIN_FRAMESPERCHAR 4
 void spin(uint8_t x, uint8_t y) { 
 	char i;
+	unsigned int l;
 
 	// Sync to frame before starting
-	while (*VBL >= 0);
+	for (l = 0; *VBL >= 0 && l < 2500; l++);
 
 	// Wait and animate spinner.
 	// Spin_half
@@ -40,14 +41,13 @@ void spin(uint8_t x, uint8_t y) {
 
 			// Wait specificed number of frames
 			for (k = 0; k < SPIN_FRAMESPERCHAR; k++) {
-				unsigned char l;
-				for (l = 0; *VBL < 0 && l < 255; l++);
-				for (l = 0; *VBL >= 0 && l < 255; l++);
+				for (l = 0; *VBL < 0 && l < 2500; l++);
+				for (l = 0; *VBL >= 0 && l < 2500; l++);
 			}
 		}
 	}
 
 	// Wait a frame when finished
-	while (*VBL < 0);
-	while (*VBL >= 0);
+	for (l = 0; *VBL < 0 && l < 2500; l++);
+	for (l = 0; *VBL >= 0 && l < 2500; l++);
 }
