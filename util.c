@@ -40,8 +40,9 @@ void spin(uint8_t x, uint8_t y) {
 
 			// Wait specificed number of frames
 			for (k = 0; k < SPIN_FRAMESPERCHAR; k++) {
-				while (*VBL < 0);
-				while (*VBL >= 0);
+				unsigned char l;
+				for (l = 0; *VBL < 0 && l < 255; l++);
+				for (l = 0; *VBL >= 0 && l < 255; l++);
 			}
 		}
 	}
