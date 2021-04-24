@@ -9,11 +9,14 @@
 #include "gwconio.h"
 #include "ram2gs_asm.h"
 
-static void ram2gs_erase() { ram2gs_cmd(0x28); }
-static void ram2gs_program() { ram2gs_cmd(0x24); }
+// Commands common to Altera and AGM
 static void ram2gs_set4mb() { ram2gs_cmd(0x10); }
 static void ram2gs_set8mb() { ram2gs_cmd(0x11); }
-static void ram2gs_setnvm(char en8meg) {
+
+// Commands for just altera
+static void ram2gs_altera_erase() { ram2gs_cmd(0x28); }
+static void ram2gs_altera_program() { ram2gs_cmd(0x24); }
+static void ram2gs_altera_setnvm(char en8meg) {
 	char i;
 	// Clock in 0 to enable this setting entry
 	ram2gs_cmd(0x20);
@@ -35,7 +38,44 @@ static void ram2gs_setnvm(char en8meg) {
 		ram2gs_cmd(0x23);
 	}
 
-	ram2gs_program();
+	ram2gs_altera_program();
+}
+
+// Commands for just AGM
+static void ram2gs_agm_select() { ram2gs_cmd(0x34); }
+static void ram2gs_agm_deselect() { ram2gs_cmd(0x30); }
+static void ram2gs_agm_tx8(char data) {
+	char i;
+	for (i = 0; i < 8; i++) {
+		ram2gs_cmd(0x34 + ((data >> (7-i)) & 1));
+		ram2gs_cmd(0x36 + ((data >> (7-i)) & 1));
+	}
+}
+static void ram2gs_agm_write_en() { 
+	ram2gs_agm_deselect();
+	ram2gs_agm_select();
+	ram2gs_agm_tx8(0x06); // 0x06 is write enable
+	ram2gs_agm_deselect();
+}
+static void ram2gs_agm_erase() { 
+	ram2gs_agm_write_en(); 
+	ram2gs_agm_select();
+	ram2gs_agm_tx8(0x20); // 0x20 is sector erase (4 kB)
+	ram2gs_agm_tx8(0x00); // address[23:16]
+	ram2gs_agm_tx8(0x10); // address[15:8]
+	ram2gs_agm_tx8(0x00); // address[7:0]
+	ram2gs_agm_deselect();
+}
+static void ram2gs_agm_write_nvm(char en8meg) {
+	ram2gs_agm_write_en();
+	ram2gs_agm_select();
+	ram2gs_agm_tx8(0x02); // 0x02 is page (byte) program
+	ram2gs_agm_tx8(0x00); // address[23:16]
+	ram2gs_agm_tx8(0x10); // address[15:8]
+	ram2gs_agm_tx8(0x00); // address[7:0]
+	if (en8meg) { ram2gs_agm_tx8(0xFF); } // data[7:0]
+	else { ram2gs_agm_tx8(0x00); } // data[7:0]
+	ram2gs_agm_deselect();
 }
 
 static void menu(void)
@@ -102,11 +142,11 @@ int ram2gs_main(void)
 					gwcputsxy(1, 8, "Resetting RAM2GS settings.");
 					gwcputsxy(1, 9, "Do not turn off your Apple.");
 
-					ram2gs_erase(); // Erase RAM2GS settings memory
-					ram2gs_set8mb(); // Enable 8 megabytes now
-
-					// Wait for >= 500ms on even the fastest systems.
-					spin(32, 8);
+					// Erase RAM2GS settings memory
+					ram2gs_altera_erase(); // Erase for Altera CPLD
+					ram2gs_agm_erase(); // Erase for AGM CPLD
+					spin(32, 8); // Wait for >= 500ms on even the fastest systems.
+					ram2gs_set8mb(); // Enable 8 megabytes now (default)
 					
 					// Show success message and quit
 					clrscr(); // Clear screen
@@ -130,9 +170,10 @@ int ram2gs_main(void)
 		gwcputsxy(1, 8, "Saving RAM2GS capacity setting.");
 		gwcputsxy(1, 9, "Do not turn off your Apple.");
 		// Save capacity in nonvolatile memory.
-		ram2gs_setnvm(en8meg);
-		// Wait for >= 500ms on even the fastest systems.
-		spin(33, 8);
+		ram2gs_altera_setnvm(en8meg); // Save for Altera CPLD
+		ram2gs_agm_erase(); // Erase for AGM CPLD
+		spin(33, 8); // Wait for >= 500ms on even the fastest systems.
+		ram2gs_agm_write_nvm(en8meg); // Write for AGM CPLD
 		// Print success message
 		clrscr(); // Clear screen
 		gwcputsxy(1, 8, "RAM2GS capacity saved successfully.");
