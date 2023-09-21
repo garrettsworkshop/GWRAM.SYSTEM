@@ -5,10 +5,7 @@
 .export 	_ram2gs_cmd
 .export 	_ram2gs_getsize
 .export 	_ram2gs_detect
-
-.define	GetTWConfig			$BCFF3C
-.define SetTWConfig			$BCFF40
-.define DisableDataCache	$BCFF4C
+.export 	_ram2gs_flashled1
 
 .macro A8
        sep #$20 ; put the 65C816 in 8-bit accumulator mode
@@ -334,6 +331,47 @@
 
 	; Postamble
 	txa				; Get return value
+	plb				; Restore bank
+	plp				; Restore status
+	xce				; Restore emulation bit
+	plp				; Pull status again to pull I flag
+	ply				; Pull X
+	plx				; Pull Y
+	rts
+.endproc
+
+.proc _ram2gs_flashled1: near
+.A8
+.I8
+	; Preamble
+	phx				; Push X
+	phy				; Push Y
+	php				; Push status
+	sei				; Disable interrupts
+	clc				; Clear carry
+	xce				; Clear emulation bit
+	php				; Push status again, reflecting emulation bit
+	phb				; Push bank
+	AI8
+
+	lda #$20
+	pha
+	plb
+	ldx #0
+	_ram2gs_flashled1_loop:
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	inx
+	cpx #0
+	bne _ram2gs_flashled1_loop
+
+	; Postamble
 	plb				; Restore bank
 	plp				; Restore status
 	xce				; Restore emulation bit
