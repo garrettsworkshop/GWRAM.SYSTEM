@@ -49,7 +49,7 @@ static void loading_screen()
 int ram2gs_main(void)
 {
 	char type;
-	uint16_t bankcount;
+	uint8_t bankcount;
 	char en8meg = true;
 	char hasled = true;
 	char enled = false;
@@ -89,6 +89,7 @@ int ram2gs_main(void)
 
 	// Detect and print current capacity 
 	bankcount = ram2gs_getsize();
+	en8meg = bankcount >= 128;
 	menu_size(bankcount);
 
 	// Detect and print LED menu

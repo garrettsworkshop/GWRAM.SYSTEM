@@ -8,6 +8,7 @@
 #include "util.h"
 #include "gwconio.h"
 #include "ram2e_hal.h"
+#include "ram2e_save.h"
 
 static void menu()
 {

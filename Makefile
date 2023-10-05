@@ -1,5 +1,7 @@
 cflags = -O --cpu 6502 -t apple2
 
+.PHONY: clean all copy
+
 all:    bin/GWRAM.po bin/GWRAM.dbg.po
 
 obj:
@@ -60,6 +62,9 @@ bin/GWRAM.dbg.po: bin/main.dbg.sys
 	cp prodos140.po bin/GWRAM.dbg.po
 	cat bin/main.dbg.sys | java -jar ./ac-1.6.0.jar -p $@ gwram.system sys 0x2000
 
-.PHONY: clean
 clean:
 	rm -fr bin obj
+
+copy: bin/GWRAM.po
+	cp bin/GWRAM.po /Volumes/FLOPPYEMU/GWRAM.po
+	diskutil unmount /Volumes/FLOPPYEMU/
