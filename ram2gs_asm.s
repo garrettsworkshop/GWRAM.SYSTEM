@@ -2,13 +2,10 @@
 .autoimport on
 .importzp	sp
 
+.export 	_ram2gs_cmd
 .export 	_ram2gs_getsize
 .export 	_ram2gs_detect
-.export 	_ram2gs_cmd
-
-.define	GetTWConfig			$BCFF3C
-.define SetTWConfig			$BCFF40
-.define DisableDataCache	$BCFF4C
+.export 	_ram2gs_flashled1
 
 .macro A8
        sep #$20 ; put the 65C816 in 8-bit accumulator mode
@@ -43,7 +40,6 @@
 .endmacro
 
 .segment	"CODE"
-
 
 .proc _thrash: near
 .A8
@@ -125,12 +121,18 @@
 	rts
 .endproc
 
-.proc _unswap: near
+.proc _ram2gs_cmd: near
 .A8
 .I8
-	; Save current bank and accumulator
-	phb
-	pha
+	; Preamble
+	php				; Push status
+	sei				; Disable interrupts
+	clc				; Clear carry
+	xce				; Clear emulation bit
+	php				; Push status again, reflecting emulation bit
+	phb				; Push bank
+	pha				; Push command in accumulator
+	AI8
 	; Switch to bank 0xFB
 	lda #$FB
 	pha
@@ -141,36 +143,30 @@
 	lda #$AD
 	sta $FFFF
 	; Pull and submit command 
-	lda #$00
-	sta $FFFD
-	; Restore accumulator and bank and return
 	pla
-	plb
+	sta $FFFD
+	; Postamble
+	plb				; Restore bank
+	plp				; Restore status
+	xce				; Restore emulation bit
+	plp				; Pull status again to pull I flag
 	rts
+.endproc
+
+.proc _unswap: near
+.A8
+.I8
+	tya
+	ora #$00
+	jmp _ram2gs_cmd
 .endproc
 
 .proc _swap: near
 .A8
 .I8
-	; Save current bank and accumulator
-	phb
-	pha
-	; Switch to bank 0xFB
-	lda #$FB
-	pha
-	plb
-	; Submit C1AD
-	lda #$C1
-	sta $FFFE
-	lda #$AD
-	sta $FFFF
-	; Pull and submit command 
-	lda #$01
-	sta $FFFD
-	; Restore accumulator and bank and return
-	pla
-	plb
-	rts
+	tya
+	ora #$01
+	jmp _ram2gs_cmd
 .endproc
 
 .proc _ram2gs_getsize: near
@@ -183,40 +179,8 @@
 	xce				; Clear emulation bit
 	php				; Push status again, reflecting emulation bit
 	phb				; Push bank
-
-	; Check for TranswarpGS
 	AI8
-	lda #0
-	pha				; Push "TWGS absent" flag
-;	AI16
-;	lda $BCFF00
-;	cmp #$5754		; "WT"
-;	bne _ram2gs_getsize_notwgs1
-;	lda $BCFF02
-;	cmp #$5347		; "SG"
-;	bne _ram2gs_getsize_notwgs1
-;
-;	; Get and push TWGS config
-;	jsl GetTWConfig
-;	pha
-;	; Disable TWGS data cache
-;	jsl DisableDataCache ; Disable data cache
-;
-;	; Pull to restore TWGS settings into A
-;	pla
-;	; Pull "TWGS absent" flag into x, and discard it
-;	AI8
-;	plx
-;	AI16
-;	; Push TWGS settings
-;	pha
-;	; Push "TWGS exists" flag
-;	AI8
-;	ldx #1
-;	phx
 
-	_ram2gs_getsize_notwgs1:
-	AI8
 	; Go to bank 3F
 	ldy #$3F
 	phy
@@ -261,27 +225,13 @@
 	stx $3456
 
 	; Check result
-	ldx #$80
+	lda #$80
 	plp
 	beq _ram2gs_getsize_return
-	ldx #$40
-	; Restore TWGS config
-	_ram2gs_getsize_return:
-	pla				; Pull TWGS flag
-	phx				; Push to save return value
-;	beq _ram2gs_getsize_post ; Skip if no TWGS
-;	plx				; Get return value back
-;	AI16
-;	pla				; Pull TWGS config
-;	AI8
-;	phx
-;	AI16
-;	jsl SetTWConfig
-;	AI8
+	lda #$40
 
 	; Postamble
-	_ram2gs_getsize_post:
-	pla				; Pull return value
+	_ram2gs_getsize_return:
 	plb				; Restore bank
 	plp				; Restore status
 	xce				; Restore emulation bit
@@ -289,50 +239,9 @@
 	rts
 .endproc
 
-.proc _ram2gs_detect: near
+.proc _ram2gs_detect_internal: near
 .A8
 .I8
-	; Preamble
-	php				; Push status
-	sei				; Disable interrupts
-	clc				; Clear carry
-	xce				; Clear emulation bit
-	php				; Push status again, reflecting emulation bit
-	phb				; Push bank
-
-	; Check for TranswarpGS
-	AI8
-	lda #0
-	pha				; Push "TWGS absent" flag
-;	AI16
-;	lda $BCFF00
-;	cmp #$5754		; "WT"
-;	bne _ram2gs_detect_notwgs1
-;	lda $BCFF02
-;	cmp #$5347		; "SG"
-;	bne _ram2gs_detect_notwgs1
-;
-;	; Get and push TWGS config
-;	jsl GetTWConfig
-;	pha
-;	; Disable TWGS data cache
-;	jsl DisableDataCache ; Disable data cache
-;
-;	; Pull to restore TWGS settings into A
-;	pla
-;	; Pull "TWGS absent" flag into x, and discard it
-;	AI8
-;	plx
-;	AI16
-;	; Push TWGS settings
-;	pha
-;	; Push "TWGS exists" flag
-;	AI8
-;	ldx #1
-;	phx
-
-	_ram2gs_detect_notwgs1:
-	AI8
 	; Switch to bank 0x3F
 	lda #$3F
 	pha
@@ -389,65 +298,85 @@
 
 	; Done, now put back clobbered bytes
 	_ram2gs_detect_done:
-	jsr _swap		; Swap
+	jsr _swap	; Swap
 	pla				; Get value to restore to swapped bank 3F
 	sta $8000		; Restore
-	jsr _unswap		; Unswap
+	jsr _unswap	; Unswap
 	pla				; Get value to restore to unswapped bank 3F
 	sta $8000		; Restore
 
-	; Restore TWGS config
-	_ram2gs_detect_return:
-	pla				; Pull TWGS flag
-	phx				; Push to save return value
-;	beq _ram2gs_detect_post ; Skip if no TWGS
-;	plx				; Get return value back
-;	AI16
-;	pla				; Pull TWGS config
-;	AI8
-;	phx
-;	AI16
-;	jsl SetTWConfig
-;	AI8
-
-	; Postamble
-	_ram2gs_detect_post:
-	pla				; Pull return value
-	plb				; Restore bank
-	plp				; Restore status
-	xce				; Restore emulation bit
-	plp				; Pull status again to pull I flag
+	; Return
 	rts
 .endproc
 
-.proc _ram2gs_cmd: near
+.proc _ram2gs_detect: near
 .A8
 .I8
 	; Preamble
+	phx				; Push X
+	phy				; Push Y
 	php				; Push status
 	sei				; Disable interrupts
 	clc				; Clear carry
 	xce				; Clear emulation bit
 	php				; Push status again, reflecting emulation bit
 	phb				; Push bank
-	pha				; Push command in accumulator
 	AI8
-	; Switch to bank 0xFB
-	lda #$FB
+
+	; Transfer typecode (shifted) to Y register
+	and #$0E
+	tay
+
+	jsr _ram2gs_detect_internal
+
+	; Postamble
+	txa				; Get return value
+	plb				; Restore bank
+	plp				; Restore status
+	xce				; Restore emulation bit
+	plp				; Pull status again to pull I flag
+	ply				; Pull X
+	plx				; Pull Y
+	rts
+.endproc
+
+.proc _ram2gs_flashled1: near
+.A8
+.I8
+	; Preamble
+	phx				; Push X
+	phy				; Push Y
+	php				; Push status
+	sei				; Disable interrupts
+	clc				; Clear carry
+	xce				; Clear emulation bit
+	php				; Push status again, reflecting emulation bit
+	phb				; Push bank
+	AI8
+
+	lda #$20
 	pha
 	plb
-	; Submit C1AD
-	lda #$C1
-	sta $FFFE
-	lda #$AD
-	sta $FFFF
-	; Pull and submit command 
-	pla
-	sta $FFFD
+	ldx #0
+	_ram2gs_flashled1_loop:
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	lda $3456
+	inx
+	cpx #0
+	bne _ram2gs_flashled1_loop
+
 	; Postamble
 	plb				; Restore bank
 	plp				; Restore status
 	xce				; Restore emulation bit
 	plp				; Pull status again to pull I flag
+	ply				; Pull X
+	plx				; Pull Y
 	rts
 .endproc
