@@ -9,25 +9,34 @@ static void ram2e_max_erase() { ram2e_cmd(0xEE, 0x00); }
 
 /* ram2e_max_save(...) */
 static void ram2e_max_save(char mask, char enled) {
-	char i;
-	char led;
-	if (mask == 0xFF) { mask = 0x80; } // Encode 0xFF mask properly
+	char wmask;
 
-	// Shift mask into UFMD 
-	for (i = 0; i < 8; i++) {
-		ram2e_max_bitbang(0x80 | ((mask << (i-1)) & 0x40));
-	}
+	// Encode 0xFF mask properly
+	if (mask == 0xFF) { wmask = 0x80; }
+	else { wmask = mask; }
 
-	// Shift LED setting into UFMD
-	if 	(( enled &&  (mask >> 7)) || 
-	     (!enled && !(mask >> 7))) { led = 0x80; }
-	else { led = 0xC0; }
-	ram2e_max_bitbang(led);
+	// Shift mask into UFMD
+	ram2e_max_bitbang(0x80 | ((wmask >> 1) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask >> 0) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask << 1) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask << 2) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask << 3) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask << 4) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask << 5) & 0x40));
+	ram2e_max_bitbang(0x80 | ((wmask << 6) & 0x40));
 
-	// Shift low six bits of mask into UFMD again
-	for (i = 1; i < 8; i++) {
-		ram2e_max_bitbang(0x80 | ((mask << (i-1)) & 0x40));
-	}
+	// Shift mask into UFMD
+	if 	(( enled &&  (wmask >> 7)) || 
+	     (!enled && !(wmask >> 7))) { 
+			 ram2e_max_bitbang(0x80);
+	} else { ram2e_max_bitbang(0xC0); }
+	ram2e_max_bitbang(0xC0);
+	ram2e_max_bitbang(0xC0);
+	ram2e_max_bitbang(0xC0);
+	ram2e_max_bitbang(0xC0);
+	ram2e_max_bitbang(0xC0);
+	ram2e_max_bitbang(0xC0);
+	ram2e_max_bitbang(0xC0);
 
 	// Program UFM
 	ram2e_max_program();
