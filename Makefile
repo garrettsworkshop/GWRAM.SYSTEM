@@ -66,5 +66,7 @@ clean:
 	rm -fr bin obj
 
 copy: bin/GWRAM.po
-	cp bin/GWRAM.po /Volumes/FLOPPYEMU/GWRAM.po
-	diskutil unmount /Volumes/FLOPPYEMU/
+	cp bin/GWRAM.po /Volumes/FLOPPYEMU/GWRAM.po || true
+	diskutil unmount /Volumes/FLOPPYEMU/ || true
+	cp bin/GWRAM.po /Volumes/A2/GWRAM.po || true
+	diskutil unmount /Volumes/A2/ || true
