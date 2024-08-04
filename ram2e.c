@@ -71,7 +71,7 @@ int ram2e_main(void)
 		} else if (ram2e_detect(0xFD)) { // MachXO2
 			type = 0xFD;
 		} else { type = 0; }
-	}
+	} else { type = 0; }
 
 	if (type == 0) {
 		#ifndef SKIP_RAM2E_DETECT
