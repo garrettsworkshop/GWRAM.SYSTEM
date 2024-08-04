@@ -61,6 +61,7 @@ int ram2e_main(void)
 
 	char nvm = false;
 	int reset_count = 0;
+	int version_count = 0;
 
 	ramworks_save(); // Save what will be clobbered
 	if (auxram_detect()) {
@@ -71,7 +72,7 @@ int ram2e_main(void)
 		} else if (ram2e_detect(0xFD)) { // MachXO2
 			type = 0xFD;
 		} else { type = 0; }
-	}
+	} else { type = 0; }
 
 	if (type == 0) {
 		#ifndef SKIP_RAM2E_DETECT
@@ -151,6 +152,19 @@ int ram2e_main(void)
 						ram2e_flashled(10);
 					}
 				}
+				reset_count = 0;
+				continue;
+			} case 'V': {
+				version_count++;
+				if (version_count >= 5) {
+					if (ram2e_detect(0xF1)) { gwcputsxy(34, 2, "revC"); }
+					else { gwcputsxy(34, 2, "revB"); }
+					if (type==0xFF) { gwcputsxy(28, 2, "typeA"); }
+					else if (type==0xFE) { gwcputsxy(28, 2, "typeB"); }
+					else if (type==0xFD) { gwcputsxy(28, 2, "typeC"); }
+					else { gwcputsxy(28, 2, "type?"); }
+				}
+				reset_count = 0;
 				continue;
 			} case 'R': {
 				reset_count++;
